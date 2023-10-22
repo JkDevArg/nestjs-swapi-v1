@@ -1,0 +1,22 @@
+service: nestj-serverless
+
+plugins:
+  - serverless-offline
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+
+functions:
+  main:
+    handler: dist/main.handler
+    events:
+      - http:
+          method: get
+          path: /
+      - http:
+          method: get
+          path: /planets
+      - http:
+          method: get
+          path: /planets/{id}
