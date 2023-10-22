@@ -1,12 +1,71 @@
 service: nestj-serverless
+configValidationMode: off
 
 plugins:
+  - serverless-plugin-optimize
   - serverless-offline
+  - serverless-dynamodb-local
 
 provider:
-  name: aws
-  runtime: nodejs18.x
+    name: aws
+    runtime: nodejs18.x
+    apiGateway:
+      shouldStartNameWithService: true
 
+    environment:
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+      NODE_OPTIONS: --enable-source-maps --stack-trace-limit=1000
+    iam:
+      role:
+        statements:
+            - Effect: 'Alow'
+              Action:
+                - 'dynamodb:DescribeTable'
+                - 'dynamodb:Query'
+                - 'dynamodb:Scan'
+                - 'dynamodb:GetItem'
+                - 'dynamodb:PutItem'
+                - 'dynamodb:UpdateItem'
+                - 'dynamodb:DeleteItem'
+
+              Resource: arn:aws:dynamodb:us-east-1:440275756438:table/reto_backend
+
+custom:
+    esbuild:
+      bundle: true
+      minify: false
+      sourcemap: true
+      exclude: aws-sdk
+      target: node18
+      define: 'require.resolve: undefined'
+      platform: node
+      concurrency: 10
+
+    dynamodb:
+      start:
+        port: 5000
+        inMemory: true
+        migrate: true
+
+      stages: dev
+
+resources:
+    Resources:
+      TodosTable:
+        Type: AWS::DynamoDB::Table
+        Properties:
+          TableName: reto_backend
+          AttributeDefinitions:
+              - AttributeName: id
+                AttributeType: S
+
+          KeySchema:
+              - AttributeName: id
+                KeyType: HASH
+
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
 functions:
   main:
     handler: dist/main.handler
@@ -20,3 +79,12 @@ functions:
       - http:
           method: get
           path: /planets/{id}
+      - http:
+          method: get
+          path: /species
+      - http:
+          method: get
+          path: /species/{id}
+      - http:
+          method: post
+          path: /species
